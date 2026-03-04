@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure OTP Vault System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a28;
+            --accent-primary: #00f0ff;
+            --accent-secondary: #ff00ff;
+            --accent-tertiary: #00ff88;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-muted: #606070;
+            --danger: #ff3366;
+            --warning: #ffaa00;
+            --success: #00ff88;
+            --glass-bg: rgba(26, 26, 40, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a0a2e 50%, #0a0a0f 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(0, 240, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(255, 0, 255, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 95%;
+            max-width: 1400px;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: slideDown 0.8s ease-out;
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3em;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 40px rgba(0, 240, 255, 0.5);
+            margin-bottom: 10px;
+            letter-spacing: 3px;
+        }
+
+        .subtitle {
+            font-size: 1.1em;
+            color: var(--text-secondary);
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            animation: fadeIn 1s ease-out;
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .glass-panel:hover {
+            border-color: rgba(0, 240, 255, 0.3);
+            box-shadow: 0 12px 48px rgba(0, 240, 255, 0.2);
+        }
+
+        .panel-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-bottom: 25px;
+            color: var(--accent-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-title::before {
+            content: '';
+            width: 4px;
+            height: 30px;
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 2px;
+        }
+
+        .otp-display-section {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.05), rgba(255, 0, 255, 0.05));
+            border-radius: 15px;
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .otp-display-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(0, 240, 255, 0.1), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        .otp-label {
+            font-size: 0.9em;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .otp-code {
+            font-family: 'Orbitron', monospace;
+            font-size: 3em;
+            font-weight: 700;
+            letter-spacing: 10px;
+            color: var(--accent-primary);
+            text-shadow: 0 0 20px rgba(0, 240, 255, 0.6);
+            margin-bottom: 20px;
+            user-select: all;
+            position: relative;
+        }
+
+        .countdown-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .countdown-bar-container {
+            width: 200px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .countdown-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success), var(--accent-primary));
+            transition: width 0.3s linear, background 0.3s ease;
+            border-radius: 10px;
+        }
+
+        .countdown-bar.warning {
+            background: linear-gradient(90deg, var(--warning), var(--danger));
+        }
+
+        .countdown-text {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.2em;
+            font-weight: 600;
+            color: var(--accent-tertiary);
+            min-width: 60px;
+        }
+
+        .countdown-text.warning {
+            color: var(--danger);
+            animation: pulse 0.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 10px;
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 1.1em;
+            font-family: 'Orbitron', monospace;
+            letter-spacing: 3px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            background: rgba(0, 240, 255, 0.05);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1em;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.5s, height 0.5s;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: var(--text-primary);
+            box-shadow: 0 5px 20px rgba(0, 240, 255, 0.3);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 8px 30px rgba(0, 240, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--accent-primary);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(0, 240, 255, 0.3);
+        }
+
+        .stat-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 2em;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-value.positive {
+            color: var(--success);
+        }
+
+        .stat-value.negative {
+            color: var(--danger);
+        }
+
+        .stat-value.neutral {
+            color: var(--accent-primary);
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .security-log {
+            max-height: 400px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent-primary) rgba(255, 255, 255, 0.1);
+        }
+
+        .security-log::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .security-log::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .security-log::-webkit-scrollbar-thumb {
+            background: var(--accent-primary);
+            border-radius: 10px;
+        }
+
+        .log-entry {
+            padding: 12px;
+            margin-bottom: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 3px solid;
+            border-radius: 8px;
+            font-size: 0.9em;
+            animation: slideInRight 0.3s ease-out;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .log-entry.success {
+            border-left-color: var(--success);
+            background: rgba(0, 255, 136, 0.05);
+        }
+
+        .log-entry.error {
+            border-left-color: var(--danger);
+            background: rgba(255, 51, 102, 0.05);
+        }
+
+        .log-entry.warning {
+            border-left-color: var(--warning);
+            background: rgba(255, 170, 0, 0.05);
+        }
+
+        .log-entry.info {
+            border-left-color: var(--accent-primary);
+            background: rgba(0, 240, 255, 0.05);
+        }
+
+        .log-timestamp {
+            color: var(--text-muted);
+            font-size: 0.85em;
+            margin-right: 10px;
+            font-family: 'Orbitron', monospace;
+        }
+
+        .log-message {
+            color: var(--text-primary);
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 0.95em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .alert-danger {
+            background: rgba(255, 51, 102, 0.1);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+        }
+
+        .alert-success {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid var(--success);
+            color: var(--success);
+        }
+
+        .alert-info {
+            background: rgba(0, 240, 255, 0.1);
+            border: 1px solid var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        .alert::before {
+            content: '⚠';
+            font-size: 1.3em;
+        }
+
+        .alert-success::before {
+            content: '✓';
+        }
+
+        .alert-info::before {
+            content: 'ℹ';
+        }
+
+        .vault-section {
+            display: none;
+        }
+
+        .vault-section.active {
+            display: block;
+        }
+
+        .vault-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5em;
+            font-weight: 700;
+        }
+
+        .session-info {
+            font-size: 0.9em;
+            color: var(--text-muted);
+        }
+
+        .session-timer {
+            color: var(--accent-tertiary);
+            font-family: 'Orbitron', monospace;
+            font-weight: 600;
+        }
+
+        .session-timer.warning {
+            color: var(--danger);
+            animation: pulse 0.5s infinite;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .lock-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lock-overlay.active {
+            display: flex;
+        }
+
+        .lock-message {
+            text-align: center;
+            padding: 40px;
+            background: var(--glass-bg);
+            border: 2px solid var(--danger);
+            border-radius: 20px;
+            box-shadow: 0 0 50px rgba(255, 51, 102, 0.3);
+        }
+
+        .lock-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            color: var(--danger);
+            animation: shake 0.5s infinite;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .lock-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2em;
+            color: var(--danger);
+            margin-bottom: 15px;
+        }
+
+        .lock-timer {
+            font-family: 'Orbitron', monospace;
+            font-size: 3em;
+            color: var(--accent-primary);
+            margin: 20px 0;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .logo {
+                font-size: 2em;
+            }
+
+            .otp-code {
+                font-size: 2em;
+                letter-spacing: 5px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🔐 SECURE VAULT</div>
+            <div class="subtitle">OTP-Based Authentication System</div>
+        </div>
+
+        <!-- Lock Overlay -->
+        <div class="lock-overlay" id="lockOverlay">
+            <div class="lock-message">
+                <div class="lock-icon">🔒</div>
+                <div class="lock-title">ACCOUNT LOCKED</div>
+                <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                    Too many failed attempts detected.<br>
+                    Security lockout in effect.
+                </p>
+                <div class="lock-timer" id="lockTimer">--:--</div>
+                <p style="color: var(--text-muted); font-size: 0.9em;">
+                    Unlock time remaining
+                </p>
+            </div>
+        </div>
+
+        <!-- Login Section -->
+        <div id="loginSection">
+            <div class="main-grid">
+                <div class="glass-panel">
+                    <h2 class="panel-title">Current OTP Code</h2>
+                    <div class="otp-display-section">
+                        <div class="otp-label">Your Time-Based One-Time Password</div>
+                        <div class="otp-code" id="otpDisplay">------</div>
+                        <div class="countdown-display">
+                            <div class="countdown-bar-container">
+                                <div class="countdown-bar" id="countdownBar"></div>
+                            </div>
+                            <div class="countdown-text" id="countdownText">30s</div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="otpInput">Enter OTP Code</label>
+                        <input 
+                            type="text" 
+                            id="otpInput" 
+                            class="input-field" 
+                            placeholder="000000" 
+                            maxlength="6"
+                            autocomplete="off"
+                        >
+                    </div>
+
+                    <div id="alertContainer"></div>
+
+                    <button class="btn btn-primary" id="verifyBtn" onclick="verifyOTP()">
+                        <span>🔓 Verify & Access Vault</span>
+                    </button>
+                </div>
+
+                <div class="glass-panel">
+                    <h2 class="panel-title">Security Dashboard</h2>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value positive" id="scoreDisplay">0</div>
+                            <div class="stat-label">Security Score</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value neutral" id="attemptsDisplay">0</div>
+                            <div class="stat-label">Failed Attempts</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value neutral" id="successDisplay">0</div>
+                            <div class="stat-label">Successful Logins</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value neutral" id="expiredDisplay">0</div>
+                            <div class="stat-label">Expired OTPs</div>
+                        </div>
+                    </div>
+
+                    <h3 style="font-size: 1.1em; color: var(--text-secondary); margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+                        <span>📊</span> Security Event Log
+                    </h3>
+                    <div class="security-log" id="securityLog">
+                        <div class="log-entry info">
+                            <span class="log-timestamp">--:--:--</span>
+                            <span class="log-message">System initialized. Awaiting authentication...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vault Section (After Login) -->
+        <div id="vaultSection" class="vault-section">
+            <div class="glass-panel full-width">
+                <div class="vault-header">
+                    <div class="user-info">
+                        <div class="user-avatar">S</div>
+                        <div>
+                            <h2 style="font-family: 'Orbitron', sans-serif; margin-bottom: 5px;">Secure Session Active</h2>
+                            <div class="session-info">
+                                Session expires in: <span class="session-timer" id="sessionTimer">02:00</span>
+                                <span style="margin: 0 10px;">•</span>
+                                Idle timeout: <span id="idleTimer">05:00</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="logout()" style="width: auto; padding: 12px 30px;">
+                        <span>🚪 Logout</span>
+                    </button>
+                </div>
+
+                <div style="text-align: center; padding: 60px 20px;">
+                    <div style="font-size: 5em; margin-bottom: 20px;">✅</div>
+                    <h2 style="font-family: 'Orbitron', sans-serif; font-size: 2em; color: var(--success); margin-bottom: 15px;">
+                        Access Granted
+                    </h2>
+                    <p style="color: var(--text-secondary); font-size: 1.1em; margin-bottom: 30px;">
+                        You have successfully authenticated with OTP.<br>
+                        Your session is protected with token-based authentication.
+                    </p>
+                    
+                    <div style="background: rgba(0, 255, 136, 0.05); padding: 30px; border-radius: 15px; border: 1px solid rgba(0, 255, 136, 0.2); max-width: 600px; margin: 0 auto;">
+                        <h3 style="color: var(--accent-tertiary); margin-bottom: 15px; font-family: 'Orbitron', sans-serif;">
+                            🛡️ Security Features Active
+                        </h3>
+                        <ul style="list-style: none; text-align: left; color: var(--text-secondary); line-height: 2;">
+                            <li>✓ Anti-replay protection enabled</li>
+                            <li>✓ Session token validated</li>
+                            <li>✓ Idle timeout monitoring</li>
+                            <li>✓ Activity tracking active</li>
+                            <li>✓ Secure event logging enabled</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="main-grid">
+                    <div class="glass-panel">
+                        <h2 class="panel-title">Current Session Stats</h2>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-value positive" id="vaultScoreDisplay">0</div>
+                                <div class="stat-label">Total Score</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value neutral" id="loginTimeDisplay">--:--</div>
+                                <div class="stat-label">Login Time</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel">
+                        <h2 class="panel-title">Activity Log</h2>
+                        <div class="security-log" id="vaultLog">
+                            <div class="log-entry success">
+                                <span class="log-timestamp">--:--:--</span>
+                                <span class="log-message">Session started successfully</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================
+        // SECURE OTP VAULT SYSTEM
+        // Custom Implementation - No External Libraries
+        // ============================
+
+        // System Configuration
+        const CONFIG = {
+            OTP_LENGTH: 6,
+            OTP_REFRESH_INTERVAL: 30000, // 30 seconds
+            MAX_FAILED_ATTEMPTS: 5,
+            BASE_LOCK_DURATION: 60000, // 1 minute
+            SESSION_DURATION: 120000, // 2 minutes
+            IDLE_TIMEOUT: 300000, // 5 minutes
+            SCORES: {
+                SUCCESS: 10,
+                FAILED: -5,
+                EXPIRED: -3,
+                LOCKED: -15,
+                LOGOUT: 5,
+                TIMEOUT: -8
+            }
+        };
+
+        // System State
+        let state = {
+            currentOTP: null,
+            otpGeneratedAt: null,
+            usedOTPs: new Set(),
+            failedAttempts: 0,
+            successfulLogins: 0,
+            expiredOTPs: 0,
+            score: 0,
+            isLocked: false,
+            lockUntil: null,
+            sessionToken: null,
+            sessionStartTime: null,
+            lastActivityTime: null,
+            loginTime: null,
+            lockCount: 0
+        };
+
+        // Load state from localStorage
+        function loadState() {
+            try {
+                const saved = localStorage.getItem('vaultState');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    state.failedAttempts = parsed.failedAttempts || 0;
+                    state.successfulLogins = parsed.successfulLogins || 0;
+                    state.expiredOTPs = parsed.expiredOTPs || 0;
+                    state.score = parsed.score || 0;
+                    state.lockUntil = parsed.lockUntil || null;
+                    state.lockCount = parsed.lockCount || 0;
+                    
+                    // Check if still locked
+                    if (state.lockUntil && Date.now() < state.lockUntil) {
+                        state.isLocked = true;
+                        showLockOverlay();
+                    }
+                    
+                    updateStats();
+                }
+            } catch (e) {
+                console.error('Failed to load state:', e);
+            }
+        }
+
+        // Save state to localStorage
+        function saveState() {
+            try {
+                const toSave = {
+                    failedAttempts: state.failedAttempts,
+                    successfulLogins: state.successfulLogins,
+                    expiredOTPs: state.expiredOTPs,
+                    score: state.score,
+                    lockUntil: state.lockUntil,
+                    lockCount: state.lockCount
+                };
+                localStorage.setItem('vaultState', JSON.stringify(toSave));
+            } catch (e) {
+                console.error('Failed to save state:', e);
+            }
+        }
+
+        // ============================
+        // CUSTOM OTP GENERATION ALGORITHM
+        // ============================
+        function generateOTP() {
+            // Custom algorithm using timestamp, random seed, and custom hash
+            const timestamp = Date.now();
+            const seed = Math.random() * 1000000;
+            
+            // Custom hash function (not cryptographically secure, but good for demo)
+            let hash = timestamp ^ Math.floor(seed);
+            hash = (hash * 9301 + 49297) % 233280;
+            
+            // Additional mixing
+            const mixer = (timestamp % 1000) * (Math.floor(seed) % 1000);
+            hash = (hash + mixer) % 1000000;
+            
+            // Ensure 6 digits
+            const otp = String(hash).padStart(CONFIG.OTP_LENGTH, '0').slice(-CONFIG.OTP_LENGTH);
+            
+            state.currentOTP = otp;
+            state.otpGeneratedAt = timestamp;
+            
+            logEvent('info', `New OTP generated: ${otp}`);
+            
+            return otp;
+        }
+
+        // Check if OTP is expired
+        function isOTPExpired() {
+            if (!state.otpGeneratedAt) return true;
+            const elapsed = Date.now() - state.otpGeneratedAt;
+            return elapsed >= CONFIG.OTP_REFRESH_INTERVAL;
+        }
+
+        // Display OTP with countdown
+        function displayOTP() {
+            const display = document.getElementById('otpDisplay');
+            const countdownText = document.getElementById('countdownText');
+            const countdownBar = document.getElementById('countdownBar');
+            
+            if (state.isLocked) {
+                display.textContent = '------';
+                countdownText.textContent = 'LOCKED';
+                countdownBar.style.width = '0%';
+                return;
+            }
+            
+            if (isOTPExpired()) {
+                // OTP expired, generate new one
+                if (state.currentOTP) {
+                    state.expiredOTPs++;
+                    state.score += CONFIG.SCORES.EXPIRED;
+                    logEvent('warning', `OTP expired. Score: ${CONFIG.SCORES.EXPIRED}`);
+                    updateStats();
+                    saveState();
+                }
+                generateOTP();
+            }
+            
+            display.textContent = state.currentOTP || '------';
+            
+            // Update countdown
+            const elapsed = Date.now() - state.otpGeneratedAt;
+            const remaining = Math.ceil((CONFIG.OTP_REFRESH_INTERVAL - elapsed) / 1000);
+            const percentage = ((CONFIG.OTP_REFRESH_INTERVAL - elapsed) / CONFIG.OTP_REFRESH_INTERVAL) * 100;
+            
+            countdownText.textContent = remaining + 's';
+            countdownBar.style.width = percentage + '%';
+            
+            // Warning state when less than 10 seconds
+            if (remaining <= 10) {
+                countdownText.classList.add('warning');
+                countdownBar.classList.add('warning');
+            } else {
+                countdownText.classList.remove('warning');
+                countdownBar.classList.remove('warning');
+            }
+        }
+
+        // ============================
+        // OTP VERIFICATION & ANTI-REPLAY
+        // ============================
+        function verifyOTP() {
+            const input = document.getElementById('otpInput');
+            const inputOTP = input.value.trim();
+            
+            // Clear previous alerts
+            clearAlerts();
+            
+            // Check if locked
+            if (state.isLocked) {
+                showAlert('danger', 'Account is locked. Please wait for unlock timer.');
+                return;
+            }
+            
+            // Validate input
+            if (!inputOTP || inputOTP.length !== CONFIG.OTP_LENGTH) {
+                showAlert('danger', 'Please enter a valid 6-digit OTP.');
+                return;
+            }
+            
+            // Check if OTP expired
+            if (isOTPExpired()) {
+                state.expiredOTPs++;
+                state.score += CONFIG.SCORES.EXPIRED;
+                logEvent('warning', `OTP verification failed: Code expired. Score: ${CONFIG.SCORES.EXPIRED}`);
+                showAlert('danger', 'OTP has expired. Using the new code shown above.');
+                generateOTP();
+                displayOTP();
+                updateStats();
+                saveState();
+                input.value = '';
+                return;
+            }
+            
+            // Anti-replay protection
+            if (state.usedOTPs.has(inputOTP)) {
+                state.failedAttempts++;
+                state.score += CONFIG.SCORES.FAILED;
+                logEvent('error', `OTP replay attack detected! Score: ${CONFIG.SCORES.FAILED}`);
+                showAlert('danger', 'This OTP has already been used. Replay attack prevented!');
+                checkLockout();
+                updateStats();
+                saveState();
+                input.value = '';
+                return;
+            }
+            
+            // Verify OTP
+            if (inputOTP === state.currentOTP) {
+                // Success!
+                state.usedOTPs.add(inputOTP);
+                state.successfulLogins++;
+                state.score += CONFIG.SCORES.SUCCESS;
+                state.failedAttempts = 0; // Reset failed attempts
+                state.loginTime = new Date().toLocaleTimeString();
+                
+                logEvent('success', `OTP verification successful! Score: +${CONFIG.SCORES.SUCCESS}`);
+                
+                // Create session
+                createSession();
+                
+                updateStats();
+                saveState();
+                input.value = '';
+                
+                // Show vault
+                showVault();
+            } else {
+                // Failed attempt
+                state.failedAttempts++;
+                state.score += CONFIG.SCORES.FAILED;
+                logEvent('error', `OTP verification failed: Invalid code. Attempts: ${state.failedAttempts}. Score: ${CONFIG.SCORES.FAILED}`);
+                showAlert('danger', `Invalid OTP. Attempts: ${state.failedAttempts}/${CONFIG.MAX_FAILED_ATTEMPTS}`);
+                
+                checkLockout();
+                updateStats();
+                saveState();
+                input.value = '';
+            }
+        }
+
+        // ============================
+        // ACCOUNT LOCKOUT SYSTEM
+        // ============================
+        function checkLockout() {
+            if (state.failedAttempts >= CONFIG.MAX_FAILED_ATTEMPTS) {
+                state.isLocked = true;
+                state.lockCount++;
+                state.score += CONFIG.SCORES.LOCKED;
+                
+                // Dynamic lock duration (exponential backoff)
+                const lockDuration = CONFIG.BASE_LOCK_DURATION * Math.pow(2, state.lockCount - 1);
+                state.lockUntil = Date.now() + lockDuration;
+                
+                logEvent('error', `Account locked! Too many failed attempts. Score: ${CONFIG.SCORES.LOCKED}`);
+                showAlert('danger', `Account locked for ${Math.ceil(lockDuration / 1000)} seconds!`);
+                
+                showLockOverlay();
+                updateStats();
+                saveState();
+            }
+        }
+
+        function showLockOverlay() {
+            const overlay = document.getElementById('lockOverlay');
+            overlay.classList.add('active');
+            updateLockTimer();
+        }
+
+        function hideLockOverlay() {
+            const overlay = document.getElementById('lockOverlay');
+            overlay.classList.remove('active');
+        }
+
+        function updateLockTimer() {
+            if (!state.isLocked || !state.lockUntil) return;
+            
+            const remaining = Math.max(0, state.lockUntil - Date.now());
+            
+            if (remaining <= 0) {
+                // Unlock
+                state.isLocked = false;
+                state.lockUntil = null;
+                state.failedAttempts = 0;
+                hideLockOverlay();
+                logEvent('info', 'Account unlocked. Failed attempts reset.');
+                saveState();
+                displayOTP();
+                return;
+            }
+            
+            const minutes = Math.floor(remaining / 60000);
+            const seconds = Math.floor((remaining % 60000) / 1000);
+            
+            const timerDisplay = document.getElementById('lockTimer');
+            timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            
+            setTimeout(updateLockTimer, 1000);
+        }
+
+        // ============================
+        // SESSION TOKEN MANAGEMENT
+        // ============================
+        function createSession() {
+            // Generate secure session token
+            const timestamp = Date.now();
+            const random = Math.random().toString(36).substring(2);
+            state.sessionToken = `${timestamp}-${random}`;
+            state.sessionStartTime = timestamp;
+            state.lastActivityTime = timestamp;
+            
+            logEvent('success', 'Secure session created with token authentication.');
+        }
+
+        function isSessionValid() {
+            if (!state.sessionToken || !state.sessionStartTime) return false;
+            
+            const elapsed = Date.now() - state.sessionStartTime;
+            return elapsed < CONFIG.SESSION_DURATION;
+        }
+
+        function updateSessionTimer() {
+            if (!isSessionValid()) {
+                // Session expired
+                state.score += CONFIG.SCORES.TIMEOUT;
+                logEvent('warning', `Session timeout. Score: ${CONFIG.SCORES.TIMEOUT}`);
+                logout();
+                return;
+            }
+            
+            const remaining = Math.max(0, CONFIG.SESSION_DURATION - (Date.now() - state.sessionStartTime));
+            const minutes = Math.floor(remaining / 60000);
+            const seconds = Math.floor((remaining % 60000) / 1000);
+            
+            const timerDisplay = document.getElementById('sessionTimer');
+            timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            
+            // Warning when less than 30 seconds
+            if (remaining <= 30000) {
+                timerDisplay.classList.add('warning');
+            } else {
+                timerDisplay.classList.remove('warning');
+            }
+        }
+
+        // ============================
+        // IDLE TIMEOUT DETECTION
+        // ============================
+        function updateIdleTimer() {
+            if (!state.lastActivityTime) return;
+            
+            const idle = Date.now() - state.lastActivityTime;
+            const remaining = Math.max(0, CONFIG.IDLE_TIMEOUT - idle);
+            
+            if (remaining <= 0) {
+                // Idle timeout
+                state.score += CONFIG.SCORES.TIMEOUT;
+                logEvent('warning', `Idle timeout. Score: ${CONFIG.SCORES.TIMEOUT}`);
+                logout();
+                return;
+            }
+            
+            const minutes = Math.floor(remaining / 60000);
+            const seconds = Math.floor((remaining % 60000) / 1000);
+            
+            const timerDisplay = document.getElementById('idleTimer');
+            if (timerDisplay) {
+                timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }
+        }
+
+        function resetIdleTimer() {
+            state.lastActivityTime = Date.now();
+        }
+
+        // Track user activity
+        document.addEventListener('mousemove', resetIdleTimer);
+        document.addEventListener('keypress', resetIdleTimer);
+        document.addEventListener('click', resetIdleTimer);
+        document.addEventListener('scroll', resetIdleTimer);
+
+        // ============================
+        // VAULT DISPLAY
+        // ============================
+        function showVault() {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('vaultSection').classList.add('active');
+            
+            // Update vault displays
+            document.getElementById('vaultScoreDisplay').textContent = state.score;
+            document.getElementById('loginTimeDisplay').textContent = state.loginTime;
+            
+            logToVault('success', 'Vault access granted. Session active.');
+            
+            // Start session and idle timers
+            setInterval(() => {
+                updateSessionTimer();
+                updateIdleTimer();
+            }, 1000);
+        }
+
+        function logout() {
+            state.score += CONFIG.SCORES.LOGOUT;
+            logEvent('info', `User logged out. Score: +${CONFIG.SCORES.LOGOUT}`);
+            
+            // Clear session
+            state.sessionToken = null;
+            state.sessionStartTime = null;
+            state.lastActivityTime = null;
+            
+            // Return to login
+            document.getElementById('loginSection').style.display = 'block';
+            document.getElementById('vaultSection').classList.remove('active');
+            
+            updateStats();
+            saveState();
+            
+            showAlert('success', 'Logged out successfully.');
+        }
+
+        // ============================
+        // UI UPDATES
+        // ============================
+        function updateStats() {
+            document.getElementById('scoreDisplay').textContent = state.score;
+            document.getElementById('attemptsDisplay').textContent = state.failedAttempts;
+            document.getElementById('successDisplay').textContent = state.successfulLogins;
+            document.getElementById('expiredDisplay').textContent = state.expiredOTPs;
+            
+            // Color code score
+            const scoreEl = document.getElementById('scoreDisplay');
+            scoreEl.classList.remove('positive', 'negative', 'neutral');
+            if (state.score > 0) {
+                scoreEl.classList.add('positive');
+            } else if (state.score < 0) {
+                scoreEl.classList.add('negative');
+            } else {
+                scoreEl.classList.add('neutral');
+            }
+        }
+
+        function showAlert(type, message) {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            container.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        function clearAlerts() {
+            document.getElementById('alertContainer').innerHTML = '';
+        }
+
+        function logEvent(type, message) {
+            const log = document.getElementById('securityLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            entry.innerHTML = `
+                <span class="log-timestamp">${timestamp}</span>
+                <span class="log-message">${message}</span>
+            `;
+            
+            log.insertBefore(entry, log.firstChild);
+            
+            // Limit log entries
+            while (log.children.length > 50) {
+                log.removeChild(log.lastChild);
+            }
+        }
+
+        function logToVault(type, message) {
+            const log = document.getElementById('vaultLog');
+            if (!log) return;
+            
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            entry.innerHTML = `
+                <span class="log-timestamp">${timestamp}</span>
+                <span class="log-message">${message}</span>
+            `;
+            
+            log.insertBefore(entry, log.firstChild);
+            
+            // Limit log entries
+            while (log.children.length > 30) {
+                log.removeChild(log.lastChild);
+            }
+        }
+
+        // ============================
+        // INITIALIZATION
+        // ============================
+        function init() {
+            loadState();
+            
+            // Check if locked
+            if (state.lockUntil && Date.now() < state.lockUntil) {
+                state.isLocked = true;
+                showLockOverlay();
+            }
+            
+            // Generate initial OTP
+            generateOTP();
+            displayOTP();
+            
+            // Update OTP display every second
+            setInterval(displayOTP, 1000);
+            
+            // Allow Enter key to verify
+            document.getElementById('otpInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    verifyOTP();
+                }
+            });
+            
+            logEvent('info', 'System initialized. Security monitoring active.');
+        }
+
+        // Start system on page load
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
